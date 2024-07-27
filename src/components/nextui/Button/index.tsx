@@ -1,16 +1,14 @@
-import { Button as NextButton } from "@nextui-org/react"
+import { Button } from "@nextui-org/react"
 
 interface IButtonProps {
 	text: string
 	onClick: React.MouseEventHandler<HTMLButtonElement>
 }
 
-const Button = (props: IButtonProps) => {
+export default function (props: IButtonProps): JSX.Element {
 	return (
-		<NextButton size="lg" color="primary" radius="md" onClick={props.onClick}>
+		<Button size="lg" color="primary" radius="md" onClick={props.onClick}>
 			{props.text}
-		</NextButton>
+		</Button>
 	)
 }
-
-export default Button
