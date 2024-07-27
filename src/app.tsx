@@ -1,8 +1,11 @@
 import React from "react"
+import { useTranslation } from "react-i18next"
 import Button from "./components/nextui/Button"
 import { Config, defaultConfig } from "./config"
 
 const App = () => {
+	const { t } = useTranslation()
+
 	const [config, setConfig] = React.useState<Config | null>(null)
 
 	React.useEffect(() => {
@@ -26,7 +29,7 @@ const App = () => {
 			<div className="container mx-auto columns-2 font-display">
 				<h1 className="text-3xl font-bold underline">Hello world!</h1>
 				<Button
-					text="Click me!"
+					text={t("Click me!")}
 					onClick={() => {
 						alert("clicked!")
 					}}
