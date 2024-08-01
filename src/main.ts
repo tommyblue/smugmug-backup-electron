@@ -1,5 +1,7 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron"
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
 import path from "path"
+
+let mainWindow: BrowserWindow | null
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -8,7 +10,7 @@ if (require("electron-squirrel-startup")) {
 
 const createWindow = () => {
 	// Create the browser window.
-	const mainWindow = new BrowserWindow({
+	mainWindow = new BrowserWindow({
 		width: 1600,
 		height: 1000,
 		webPreferences: {
@@ -53,4 +55,13 @@ app.on("activate", () => {
 // code. You can also put them in separate files and import them here.
 ipcMain.handle("browser:open", async (event, url: string) => {
 	shell.openExternal(url)
+})
+
+ipcMain.handle("dialog:openFile", async event => {
+	if (!mainWindow) return
+
+	const result = await dialog.showOpenDialog(mainWindow, {
+		properties: ["openDirectory", "createDirectory"],
+	})
+	return result.filePaths
 })

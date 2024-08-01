@@ -1,9 +1,11 @@
+// import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid"
 import { Checkbox, Input, Link, Button as ModalButton } from "@nextui-org/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import Button from "../../components/nextui/Button"
+import { PasswordInput } from "../../components/nextui/Input"
 import Modal from "../../components/nextui/Modal"
 import { Config } from "../../config"
 import useConfig from "../../hooks/config"
@@ -13,9 +15,10 @@ export default function (): JSX.Element {
 	const { config, setConfig } = useConfig()
 	const [isOpen, setIsOpen] = useState(false)
 	const [tempConfig, setTempConfig] = useState<Config>(config)
+	const [isFormValid, setIsFormValid] = useState(false)
 
 	useEffect(() => {
-		setTempConfig(config)
+		setTempConfig({ ...config })
 	}, [config])
 
 	const onClose = () => {
@@ -50,7 +53,7 @@ export default function (): JSX.Element {
 							<ModalButton color="danger" variant="light" onPress={onClose}>
 								Close
 							</ModalButton>
-							<ModalButton color="primary" onPress={handleSave}>
+							<ModalButton color="primary" onPress={handleSave} isDisabled={!isFormValid}>
 								Save
 							</ModalButton>
 						</>
@@ -62,39 +65,42 @@ export default function (): JSX.Element {
 					}}
 				>
 					<h3 className="text-default-500 text-small">{t("Authentication")}</h3>
-					<Input
+					<PasswordInput
 						autoFocus
 						isRequired
 						label={t("API Token")}
-						type="text"
-						variant="bordered"
+						validation={v => v.length > 0}
 						value={tempConfig.auth.api_key}
-						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_key: e.target.value } })}
+						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_key: v } })}
 					/>
-					<Input
+
+					<PasswordInput
+						autoFocus
 						isRequired
-						label={t("API Secret")}
-						type="text"
-						variant="bordered"
+						label={t("API Token")}
+						validation={v => v.length > 0}
 						value={tempConfig.auth.api_secret}
-						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_secret: e.target.value } })}
+						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_secret: v } })}
 					/>
-					<Input
+
+					<PasswordInput
+						autoFocus
 						isRequired
-						label={t("User token")}
-						type="text"
-						variant="bordered"
+						label={t("API Token")}
+						validation={v => v.length > 0}
 						value={tempConfig.auth.user_token}
-						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_token: e.target.value } })}
+						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_token: v } })}
 					/>
-					<Input
+
+					<PasswordInput
+						autoFocus
 						isRequired
-						label={t("User secret")}
-						type="text"
-						variant="bordered"
+						label={t("API Token")}
+						validation={v => v.length > 0}
 						value={tempConfig.auth.user_secret}
-						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_secret: e.target.value } })}
+						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_secret: v } })}
 					/>
+
 					<div className="flex py-2 px-1 justify-between">
 						<Link
 							style={{ cursor: "pointer" }}
@@ -104,20 +110,24 @@ export default function (): JSX.Element {
 							isExternal
 							showAnchorIcon
 						>
-							How to get the keys?
+							{t("How to get the keys?")}
 						</Link>
 					</div>
 
 					<h3 className="text-default-500 text-small">{t("Store")}</h3>
 					<Input
 						isRequired
+						isReadOnly
 						label={t("Destination path")}
-						type="file"
+						type="text"
 						variant="bordered"
 						value={tempConfig.store.destination}
-						onChange={e =>
-							setTempConfig({ ...tempConfig, store: { ...tempConfig.store, destination: e.target.value } })
-						}
+						onClick={v => {
+							window.api.openFile().then((files: string[]) => {
+								if (!files || files.length === 0) return
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, destination: files[0] } })
+							})
+						}}
 					/>
 					<Input
 						isRequired
@@ -125,7 +135,7 @@ export default function (): JSX.Element {
 						type="text"
 						variant="bordered"
 						value={tempConfig.store.file_names}
-						onChange={e => setTempConfig({ ...tempConfig, store: { ...tempConfig.store, file_names: e.target.value } })}
+						onValueChange={v => setTempConfig({ ...tempConfig, store: { ...tempConfig.store, file_names: v } })}
 					/>
 					<div className="flex py-2 px-1 justify-between">
 						<Checkbox
@@ -133,8 +143,8 @@ export default function (): JSX.Element {
 								label: "textsmall",
 							}}
 							isSelected={tempConfig.store.use_metadata_times}
-							onChange={e =>
-								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, use_metadata_times: e.target.checked } })
+							onValueChange={v =>
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, use_metadata_times: v } })
 							}
 						>
 							{t("Use metadata times")}
@@ -146,8 +156,8 @@ export default function (): JSX.Element {
 								label: "textsmall",
 							}}
 							isSelected={tempConfig.store.force_metadata_times}
-							onChange={e =>
-								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, force_metadata_times: e.target.checked } })
+							onValueChange={v =>
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, force_metadata_times: v } })
 							}
 						>
 							{t("Force metadata times")}
@@ -159,9 +169,7 @@ export default function (): JSX.Element {
 								label: "textsmall",
 							}}
 							isSelected={tempConfig.store.write_csv}
-							onChange={e =>
-								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, write_csv: e.target.checked } })
-							}
+							onValueChange={v => setTempConfig({ ...tempConfig, store: { ...tempConfig.store, write_csv: v } })}
 						>
 							{t("Write CSV")}
 						</Checkbox>
@@ -172,8 +180,8 @@ export default function (): JSX.Element {
 								label: "textsmall",
 							}}
 							isSelected={tempConfig.store.force_video_download}
-							onChange={e =>
-								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, force_video_download: e.target.checked } })
+							onValueChange={v =>
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, force_video_download: v } })
 							}
 						>
 							{t("Force video download")}
@@ -186,12 +194,18 @@ export default function (): JSX.Element {
 						type="number"
 						variant="bordered"
 						value={"" + tempConfig.store.concurrent_albums}
-						onChange={e =>
+						onValueChange={v => {
+							if (isNaN(parseInt(v))) {
+								return
+							}
+							if (parseInt(v) < 1) {
+								v = "1"
+							}
 							setTempConfig({
 								...tempConfig,
-								store: { ...tempConfig.store, concurrent_albums: e.target.valueAsNumber },
+								store: { ...tempConfig.store, concurrent_albums: parseInt(v) },
 							})
-						}
+						}}
 					/>
 					<Input
 						isRequired
@@ -199,12 +213,18 @@ export default function (): JSX.Element {
 						type="number"
 						variant="bordered"
 						value={"" + tempConfig.store.concurrent_downloads}
-						onChange={e =>
+						onValueChange={v => {
+							if (isNaN(parseInt(v))) {
+								return
+							}
+							if (parseInt(v) < 1) {
+								v = "1"
+							}
 							setTempConfig({
 								...tempConfig,
-								store: { ...tempConfig.store, concurrent_downloads: e.target.valueAsNumber },
+								store: { ...tempConfig.store, concurrent_downloads: parseInt(v) },
 							})
-						}
+						}}
 					/>
 				</Modal>
 			)}
