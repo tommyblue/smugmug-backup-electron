@@ -1,6 +1,7 @@
 import { Checkbox, Input, Link, Button as ModalButton } from "@nextui-org/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 
 import Button from "../../components/nextui/Button"
 import Modal from "../../components/nextui/Modal"
@@ -28,6 +29,7 @@ export default function (): JSX.Element {
 
 	function handleSave() {
 		setConfig(tempConfig)
+		toast.success(t("Configuration saved"))
 		onClose()
 	}
 

@@ -3,6 +3,7 @@ import i18n from "i18next"
 import React from "react"
 import { createRoot } from "react-dom/client"
 import { initReactI18next } from "react-i18next"
+import { Toaster } from "sonner"
 import App from "./app"
 
 i18n
@@ -30,6 +31,7 @@ const root = createRoot(document.getElementById("root")!)
 root.render(
 	<React.StrictMode>
 		<NextUIProvider>
+			<Toaster richColors position="bottom-center" />
 			<App />
 		</NextUIProvider>
 	</React.StrictMode>
