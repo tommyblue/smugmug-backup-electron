@@ -1,15 +1,22 @@
 import { Checkbox, Input, Link, Button as ModalButton } from "@nextui-org/react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import Button from "../../components/nextui/Button"
 import Modal from "../../components/nextui/Modal"
+import { Config } from "../../config"
 import useConfig from "../../hooks/config"
 
 export default function (): JSX.Element {
 	const { t } = useTranslation()
 	const { config, setConfig } = useConfig()
 	const [isOpen, setIsOpen] = useState(false)
+	const [tempConfig, setTempConfig] = useState<Config>(config)
+
+	useEffect(() => {
+		setTempConfig(config)
+	}, [config])
+
 	const onClose = () => {
 		setIsOpen(false)
 	}
@@ -17,6 +24,11 @@ export default function (): JSX.Element {
 	function openTokenInstructions(e: React.MouseEvent<HTMLAnchorElement>) {
 		e.preventDefault()
 		window.api.openBrowser("https://github.com/tommyblue/smugmug-backup?tab=readme-ov-file#obtain-api-keys")
+	}
+
+	function handleSave() {
+		setConfig(tempConfig)
+		onClose()
 	}
 
 	return (
@@ -36,8 +48,8 @@ export default function (): JSX.Element {
 							<ModalButton color="danger" variant="light" onPress={onClose}>
 								Close
 							</ModalButton>
-							<ModalButton color="primary" onPress={onClose}>
-								Action
+							<ModalButton color="primary" onPress={handleSave}>
+								Save
 							</ModalButton>
 						</>
 					}
@@ -52,37 +64,44 @@ export default function (): JSX.Element {
 						autoFocus
 						isRequired
 						label={t("API Token")}
-						type="password"
+						type="text"
 						variant="bordered"
-						value={config.auth.api_key}
-						onChange={e => setConfig({ ...config, auth: { ...config.auth, api_key: e.target.value } })}
+						value={tempConfig.auth.api_key}
+						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_key: e.target.value } })}
 					/>
 					<Input
 						isRequired
 						label={t("API Secret")}
-						type="password"
+						type="text"
 						variant="bordered"
-						value={config.auth.api_secret}
-						onChange={e => setConfig({ ...config, auth: { ...config.auth, api_secret: e.target.value } })}
+						value={tempConfig.auth.api_secret}
+						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_secret: e.target.value } })}
 					/>
 					<Input
 						isRequired
 						label={t("User token")}
-						type="password"
+						type="text"
 						variant="bordered"
-						value={config.auth.user_token}
-						onChange={e => setConfig({ ...config, auth: { ...config.auth, user_token: e.target.value } })}
+						value={tempConfig.auth.user_token}
+						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_token: e.target.value } })}
 					/>
 					<Input
 						isRequired
 						label={t("User secret")}
-						type="password"
+						type="text"
 						variant="bordered"
-						value={config.auth.user_secret}
-						onChange={e => setConfig({ ...config, auth: { ...config.auth, user_secret: e.target.value } })}
+						value={tempConfig.auth.user_secret}
+						onChange={e => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_secret: e.target.value } })}
 					/>
 					<div className="flex py-2 px-1 justify-between">
-						<Link color="primary" size="sm" onClick={openTokenInstructions} isExternal showAnchorIcon>
+						<Link
+							style={{ cursor: "pointer" }}
+							color="primary"
+							size="sm"
+							onClick={openTokenInstructions}
+							isExternal
+							showAnchorIcon
+						>
 							How to get the keys?
 						</Link>
 					</div>
@@ -93,24 +112,28 @@ export default function (): JSX.Element {
 						label={t("Destination path")}
 						type="file"
 						variant="bordered"
-						value={config.store.destination}
-						onChange={e => setConfig({ ...config, store: { ...config.store, destination: e.target.value } })}
+						value={tempConfig.store.destination}
+						onChange={e =>
+							setTempConfig({ ...tempConfig, store: { ...tempConfig.store, destination: e.target.value } })
+						}
 					/>
 					<Input
 						isRequired
 						label={t("File names")}
 						type="text"
 						variant="bordered"
-						value={config.store.file_names}
-						onChange={e => setConfig({ ...config, store: { ...config.store, file_names: e.target.value } })}
+						value={tempConfig.store.file_names}
+						onChange={e => setTempConfig({ ...tempConfig, store: { ...tempConfig.store, file_names: e.target.value } })}
 					/>
 					<div className="flex py-2 px-1 justify-between">
 						<Checkbox
 							classNames={{
 								label: "textsmall",
 							}}
-							isSelected={config.store.use_metadata_times}
-							onChange={e => setConfig({ ...config, store: { ...config.store, use_metadata_times: e.target.checked } })}
+							isSelected={tempConfig.store.use_metadata_times}
+							onChange={e =>
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, use_metadata_times: e.target.checked } })
+							}
 						>
 							{t("Use metadata times")}
 						</Checkbox>
@@ -120,9 +143,9 @@ export default function (): JSX.Element {
 							classNames={{
 								label: "textsmall",
 							}}
-							isSelected={config.store.force_metadata_times}
+							isSelected={tempConfig.store.force_metadata_times}
 							onChange={e =>
-								setConfig({ ...config, store: { ...config.store, force_metadata_times: e.target.checked } })
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, force_metadata_times: e.target.checked } })
 							}
 						>
 							{t("Force metadata times")}
@@ -133,8 +156,10 @@ export default function (): JSX.Element {
 							classNames={{
 								label: "textsmall",
 							}}
-							isSelected={config.store.write_csv}
-							onChange={e => setConfig({ ...config, store: { ...config.store, write_csv: e.target.checked } })}
+							isSelected={tempConfig.store.write_csv}
+							onChange={e =>
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, write_csv: e.target.checked } })
+							}
 						>
 							{t("Write CSV")}
 						</Checkbox>
@@ -144,9 +169,9 @@ export default function (): JSX.Element {
 							classNames={{
 								label: "textsmall",
 							}}
-							isSelected={config.store.force_video_download}
+							isSelected={tempConfig.store.force_video_download}
 							onChange={e =>
-								setConfig({ ...config, store: { ...config.store, force_video_download: e.target.checked } })
+								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, force_video_download: e.target.checked } })
 							}
 						>
 							{t("Force video download")}
@@ -158,9 +183,12 @@ export default function (): JSX.Element {
 						label={t("Concurrent albums downloads")}
 						type="number"
 						variant="bordered"
-						value={"" + config.store.concurrent_albums}
+						value={"" + tempConfig.store.concurrent_albums}
 						onChange={e =>
-							setConfig({ ...config, store: { ...config.store, concurrent_albums: e.target.valueAsNumber } })
+							setTempConfig({
+								...tempConfig,
+								store: { ...tempConfig.store, concurrent_albums: e.target.valueAsNumber },
+							})
 						}
 					/>
 					<Input
@@ -168,9 +196,12 @@ export default function (): JSX.Element {
 						label={t("Concurrent downloads")}
 						type="number"
 						variant="bordered"
-						value={"" + config.store.concurrent_downloads}
+						value={"" + tempConfig.store.concurrent_downloads}
 						onChange={e =>
-							setConfig({ ...config, store: { ...config.store, concurrent_downloads: e.target.valueAsNumber } })
+							setTempConfig({
+								...tempConfig,
+								store: { ...tempConfig.store, concurrent_downloads: e.target.valueAsNumber },
+							})
 						}
 					/>
 				</Modal>
