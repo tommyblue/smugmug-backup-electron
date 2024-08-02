@@ -5,6 +5,7 @@ declare global {
 		api: {
 			openBrowser: (url: string) => void
 			openFile: () => Promise<string[]>
+			testCredentials: (cfg: Auth) => Promise<boolean>
 		}
 	}
 }

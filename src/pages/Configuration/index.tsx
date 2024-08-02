@@ -21,6 +21,7 @@ export default function (): JSX.Element {
 	const [tempConfig, setTempConfig] = useState<Config>(config)
 	const [formValidation, setFormValidation] = useState<Validation>({})
 	const [isFormValid, setIsFormValid] = useState(false)
+	const [isTesting, setIsTesting] = useState(false)
 
 	useEffect(() => {
 		setTempConfig({ ...config })
@@ -51,14 +52,31 @@ export default function (): JSX.Element {
 		onClose()
 	}
 
+	function testCredentials() {
+		setIsTesting(true)
+		window.api
+			.testCredentials(tempConfig.auth)
+			.then((res: boolean) => {
+				if (res) {
+					toast.success(t("Credentials are valid"))
+				} else {
+					toast.error(t("Credentials are not valid"))
+				}
+			})
+			.finally(() => {
+				setIsTesting(false)
+			})
+	}
+
 	return (
 		<>
 			<Button
-				text={t("Configurations")}
 				onClick={() => {
 					setIsOpen(true)
 				}}
-			/>
+			>
+				{t("Configurations")}
+			</Button>
 			{isOpen && (
 				<Modal
 					title={t("Account configuration")}
@@ -116,7 +134,6 @@ export default function (): JSX.Element {
 						value={tempConfig.auth.user_secret}
 						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_secret: v } })}
 					/>
-
 					<div className="flex py-2 px-1 justify-between">
 						<Link
 							style={{ cursor: "pointer" }}
@@ -128,6 +145,9 @@ export default function (): JSX.Element {
 						>
 							{t("How to get the keys?")}
 						</Link>
+						<Button size="sm" color="primary" radius="md" isLoading={isTesting} onClick={testCredentials}>
+							{t("Test credentials")}
+						</Button>
 					</div>
 
 					<h3 className="text-default-500 text-small">{t("Store")}</h3>

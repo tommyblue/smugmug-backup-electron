@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
 import path from "path"
+import { Auth } from "./config"
 
 let mainWindow: BrowserWindow | null
 
@@ -64,4 +65,9 @@ ipcMain.handle("dialog:openFile", async event => {
 		properties: ["openDirectory", "createDirectory"],
 	})
 	return result.filePaths
+})
+
+ipcMain.handle("config:test", async (event, cfg: Auth) => {
+	console.log("Testing credentials", cfg)
+	return true
 })

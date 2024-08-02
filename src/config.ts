@@ -1,4 +1,4 @@
-type Auth = {
+export type Auth = {
 	api_key: string
 	api_secret: string
 	user_token: string
