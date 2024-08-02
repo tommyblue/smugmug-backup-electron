@@ -5,21 +5,36 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import Button from "../../components/nextui/Button"
-import { PasswordInput } from "../../components/nextui/Input"
+import { PasswordInput, TextInput } from "../../components/nextui/Input"
 import Modal from "../../components/nextui/Modal"
 import { Config } from "../../config"
 import useConfig from "../../hooks/config"
+
+interface Validation {
+	[key: string]: boolean
+}
 
 export default function (): JSX.Element {
 	const { t } = useTranslation()
 	const { config, setConfig } = useConfig()
 	const [isOpen, setIsOpen] = useState(false)
 	const [tempConfig, setTempConfig] = useState<Config>(config)
+	const [formValidation, setFormValidation] = useState<Validation>({})
 	const [isFormValid, setIsFormValid] = useState(false)
 
 	useEffect(() => {
 		setTempConfig({ ...config })
 	}, [config])
+
+	useEffect(() => {
+		for (const k in formValidation) {
+			if (!formValidation[k]) {
+				setIsFormValid(false)
+				return
+			}
+		}
+		setIsFormValid(true)
+	}, [formValidation])
 
 	const onClose = () => {
 		setIsOpen(false)
@@ -68,35 +83,36 @@ export default function (): JSX.Element {
 					<PasswordInput
 						autoFocus
 						isRequired
-						label={t("API Token")}
+						label={t("API token")}
 						validation={v => v.length > 0}
+						setValidation={v => setFormValidation(o => ({ ...o, ...{ api_key: v } }))}
 						value={tempConfig.auth.api_key}
 						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_key: v } })}
 					/>
 
 					<PasswordInput
-						autoFocus
 						isRequired
-						label={t("API Token")}
+						label={t("API secret")}
 						validation={v => v.length > 0}
+						setValidation={v => setFormValidation(o => ({ ...o, ...{ api_secret: v } }))}
 						value={tempConfig.auth.api_secret}
 						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, api_secret: v } })}
 					/>
 
 					<PasswordInput
-						autoFocus
 						isRequired
-						label={t("API Token")}
+						label={t("User token")}
 						validation={v => v.length > 0}
+						setValidation={v => setFormValidation(o => ({ ...o, ...{ user_token: v } }))}
 						value={tempConfig.auth.user_token}
 						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_token: v } })}
 					/>
 
 					<PasswordInput
-						autoFocus
 						isRequired
-						label={t("API Token")}
+						label={t("User secret")}
 						validation={v => v.length > 0}
+						setValidation={v => setFormValidation(o => ({ ...o, ...{ user_secret: v } }))}
 						value={tempConfig.auth.user_secret}
 						onValueChange={v => setTempConfig({ ...tempConfig, auth: { ...tempConfig.auth, user_secret: v } })}
 					/>
@@ -115,13 +131,15 @@ export default function (): JSX.Element {
 					</div>
 
 					<h3 className="text-default-500 text-small">{t("Store")}</h3>
-					<Input
+
+					<TextInput
 						isRequired
 						isReadOnly
 						label={t("Destination path")}
-						type="text"
-						variant="bordered"
+						validation={v => v.length > 0}
+						setValidation={v => setFormValidation(o => ({ ...o, ...{ file_names: v } }))}
 						value={tempConfig.store.destination}
+						onValueChange={v => setTempConfig({ ...tempConfig, store: { ...tempConfig.store, destination: v } })}
 						onClick={v => {
 							window.api.openFile().then((files: string[]) => {
 								if (!files || files.length === 0) return
@@ -129,11 +147,11 @@ export default function (): JSX.Element {
 							})
 						}}
 					/>
-					<Input
+					<TextInput
 						isRequired
 						label={t("File names")}
-						type="text"
-						variant="bordered"
+						validation={v => v.length > 0}
+						setValidation={v => setFormValidation(o => ({ ...o, ...{ file_names: v } }))}
 						value={tempConfig.store.file_names}
 						onValueChange={v => setTempConfig({ ...tempConfig, store: { ...tempConfig.store, file_names: v } })}
 					/>

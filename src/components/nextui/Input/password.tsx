@@ -1,19 +1,33 @@
 import { Input, InputProps } from "@nextui-org/react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { EyeIcon, EyeSlashIcon } from "./icons"
 
 interface IInputProps extends InputProps {
 	reveal?: boolean
 	validation?: (value: string) => boolean
+	setValidation?: (value: boolean) => void
 }
 
 export function PasswordInput(props: IInputProps): JSX.Element {
 	const [isVisible, setIsVisible] = useState(false)
 	const [isInvalid, setIsInvalid] = useState(() => {
-		if (props.validation) {
-			return !props.validation(props.value!)
+		if (!props.validation) {
+			return false
 		}
+		return !props.validation(props.value!)
 	})
+
+	useEffect(() => {
+		if (props.setValidation) {
+			props.setValidation(!isInvalid)
+		}
+	}, [])
+
+	useEffect(() => {
+		if (props.setValidation) {
+			props.setValidation(!isInvalid)
+		}
+	}, [isInvalid])
 
 	const toggleVisibility = () => {
 		setIsVisible(isVisible => !isVisible)
@@ -50,6 +64,7 @@ export function PasswordInput(props: IInputProps): JSX.Element {
 			variant="bordered"
 			value={props.value}
 			onValueChange={handleValueChange}
+			{...props}
 		/>
 	)
 }
