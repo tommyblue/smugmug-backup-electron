@@ -1,6 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
 import path from "path"
 import { Auth } from "./config"
+import Oauth from "./oauth"
+
+const baseUrl = "https://api.smugmug.com/api/v2"
 
 let mainWindow: BrowserWindow | null
 
@@ -68,6 +71,30 @@ ipcMain.handle("dialog:openFile", async event => {
 })
 
 ipcMain.handle("config:test", async (event, cfg: Auth) => {
-	console.log("Testing credentials", cfg)
-	return true
+	const url = baseUrl + "!authuser"
+	const oauth = new Oauth(cfg.api_key, cfg.api_secret, cfg.user_token, cfg.user_secret)
+	const h = oauth.authorizationHeader(url)
+
+	let res = false
+	await fetch(url, {
+		headers: {
+			Accept: "application/json",
+			Authorization: h,
+		},
+	})
+		.then(res => res.json())
+		.then(json => {
+			if (json.Code !== 200) {
+				console.log("config:test wrong response:", json)
+				res = false
+				return
+			}
+			res = true
+		})
+		.catch(err => {
+			console.error("config:test error:", err)
+			res = false
+		})
+
+	return res
 })
