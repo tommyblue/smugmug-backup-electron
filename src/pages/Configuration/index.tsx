@@ -84,10 +84,10 @@ export default function (): JSX.Element {
 					footer={
 						<>
 							<ModalButton color="danger" variant="light" onPress={onClose}>
-								Close
+								{t("Close")}
 							</ModalButton>
 							<ModalButton color="primary" onPress={handleSave} isDisabled={!isFormValid}>
-								Save
+								{t("Save")}
 							</ModalButton>
 						</>
 					}

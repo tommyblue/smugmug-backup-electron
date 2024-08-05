@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld("api", {
 	openBrowser: (url: string) => ipcRenderer.invoke("browser:open", url),
 	openFile: () => ipcRenderer.invoke("dialog:openFile"),
 	testCredentials: (cfg: Auth): Promise<boolean> => ipcRenderer.invoke("config:test", cfg),
+	analyzeAccount: (cfg: Auth): Promise<string> => ipcRenderer.invoke("account:analyze", cfg),
 })

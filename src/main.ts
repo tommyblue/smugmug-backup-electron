@@ -1,9 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
 import path from "path"
+import { AlbumsResponse, AlbumType, CurrentUserResponse, makeApiCall, UserResponse } from "./api"
 import { Auth } from "./config"
-import Oauth from "./oauth"
 
-const baseUrl = "https://api.smugmug.com/api/v2"
+const baseUrl = "https://api.smugmug.com"
 
 let mainWindow: BrowserWindow | null
 
@@ -70,31 +70,78 @@ ipcMain.handle("dialog:openFile", async event => {
 	return result.filePaths
 })
 
-ipcMain.handle("config:test", async (event, cfg: Auth) => {
-	const url = baseUrl + "!authuser"
-	const oauth = new Oauth(cfg.api_key, cfg.api_secret, cfg.user_token, cfg.user_secret)
-	const h = oauth.authorizationHeader(url)
-
-	let res = false
-	await fetch(url, {
-		headers: {
-			Accept: "application/json",
-			Authorization: h,
-		},
-	})
-		.then(res => res.json())
-		.then(json => {
-			if (json.Code !== 200) {
-				console.log("config:test wrong response:", json)
-				res = false
-				return
-			}
-			res = true
-		})
-		.catch(err => {
-			console.error("config:test error:", err)
-			res = false
-		})
-
-	return res
+ipcMain.handle("config:test", async (event, cfg: Auth): Promise<boolean> => {
+	const url = baseUrl + "/api/v2!authuser"
+	try {
+		const res = await makeApiCall<CurrentUserResponse>(url, cfg)
+		if (res.Code !== 200) {
+			console.log("config:test wrong response:", res)
+			return false
+		}
+		return true
+	} catch (err) {
+		console.error("config:test error:", err)
+		return false
+	}
 })
+
+type AccountAnalysisResponse = {
+	IsValid: boolean
+	Content: string
+}
+
+ipcMain.handle("account:analyze", async (event, cfg: Auth): Promise<AccountAnalysisResponse> => {
+	let url = baseUrl + "/api/v2!authuser"
+	let currentUser: string
+	try {
+		const res = await makeApiCall<CurrentUserResponse>(url, cfg)
+		if (res.Code !== 200) {
+			console.log("account:analyze wrong response:", res)
+			return { IsValid: false, Content: "Invalid credentials" }
+		}
+		currentUser = res.Response.User.NickName
+	} catch (err) {
+		console.error("account:analyze error:", err)
+		return { IsValid: false, Content: "Invalid credentials" }
+	}
+
+	let userAlbumsURI: string
+	url = baseUrl + "/api/v2/user/" + currentUser
+	try {
+		const res = await makeApiCall<UserResponse>(url, cfg)
+		if (res.Code !== 200) {
+			console.log("account:analyze wrong response:", res)
+			return { IsValid: false, Content: "Invalid credentials" }
+		}
+		userAlbumsURI = res.Response.User.Uris.UserAlbums.Uri
+	} catch (err) {
+		console.error("account:analyze error:", err)
+		return { IsValid: false, Content: "Invalid credentials" }
+	}
+
+	const albums = await getAlbums(cfg, userAlbumsURI)
+
+	return { IsValid: true, Content: JSON.stringify(albums) }
+})
+
+async function getAlbums(cfg: Auth, firstURI: string): Promise<AlbumType[]> {
+	let uri = firstURI
+	let albums: AlbumType[] = []
+
+	while (uri !== "") {
+		console.log("getAlbums uri:", uri)
+		const res = await makeApiCall<AlbumsResponse>(baseUrl + uri, cfg)
+		if (res.Code !== 200) {
+			console.log("getAlbums wrong response:", res)
+			throw new Error("Invalid credentials")
+		}
+
+		albums.push(...res.Response.Album)
+		if (res.Response.Pages.NextPage === undefined) {
+			break
+		}
+		uri = res.Response.Pages.NextPage
+	}
+
+	return albums
+}

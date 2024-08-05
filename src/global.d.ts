@@ -6,6 +6,7 @@ declare global {
 			openBrowser: (url: string) => void
 			openFile: () => Promise<string[]>
 			testCredentials: (cfg: Auth) => Promise<boolean>
+			analyzeAccount: (cfg: Auth) => Promise<string>
 		}
 	}
 }
