@@ -7,6 +7,34 @@ export type CurrentUserResponse = {
 	}
 }
 
+export type AlbumImageType = {
+	FileName: string
+	ImageKey: string // Use as unique ID if FileName is empty
+	ArchivedMD5: string
+	ArchivedSize: number
+	ArchivedUri: string
+	IsVideo: boolean
+	Processing: boolean
+	UploadKey: string
+	DateTimeOriginal: string
+	Caption: string
+	DateTimeUploaded: string
+	Keywords: string
+	Latitude: string
+	Longitude: string
+	Uris: {
+		ImageMetadata: {
+			Uri: string
+		}
+		LargestVideo: {
+			Uri: string
+		}
+	}
+
+	AlbumPath: string // not in API response, but used to store the path of the album
+	builtFilename: string // The final filename, after template replacements
+}
+
 export type AlbumType = {
 	UrlPath: string
 	Uris: {
@@ -26,6 +54,14 @@ export type UserResponse = {
 	}
 }
 
+export type AlbumsImagesResponse = {
+	Uri: string
+	AlbumImage: AlbumImageType[]
+	Pages: {
+		NextPage: string
+	}
+}
+
 export type AlbumsResponse = {
 	Uri: string
 	Album: AlbumType[]
@@ -34,13 +70,13 @@ export type AlbumsResponse = {
 	}
 }
 
-type ApiResponse<T extends CurrentUserResponse | UserResponse | AlbumsResponse> = {
+type ApiResponse<T extends CurrentUserResponse | UserResponse | AlbumsResponse | AlbumsImagesResponse> = {
 	Code: number
 	Message: string
 	Response: T
 }
 
-export async function makeApiCall<T extends CurrentUserResponse | UserResponse | AlbumsResponse>(
+export async function makeApiCall<T extends CurrentUserResponse | UserResponse | AlbumsResponse | AlbumsImagesResponse>(
 	url: string,
 	cfg: Auth
 ): Promise<ApiResponse<T>> {
@@ -54,10 +90,7 @@ export async function makeApiCall<T extends CurrentUserResponse | UserResponse |
 		},
 	})
 		.then(res => res.json() as Promise<ApiResponse<T>>)
-		.then(json => {
-			console.log(json)
-			return json
-		})
+		.then(json => json)
 
 	return res
 }
