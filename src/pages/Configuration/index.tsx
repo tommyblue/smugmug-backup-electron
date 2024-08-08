@@ -7,8 +7,8 @@ import { toast } from "sonner"
 import Button from "../../components/nextui/Button"
 import { PasswordInput, TextInput } from "../../components/nextui/Input"
 import Modal from "../../components/nextui/Modal"
-import { Config } from "../../config"
 import useConfig from "../../hooks/config"
+import { Config } from "../../smugmug/config"
 
 interface Validation {
 	[key: string]: boolean

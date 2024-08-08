@@ -1,19 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
-import { renderString } from "nunjucks"
 import path from "path"
-import {
-	AlbumImageType,
-	AlbumsImagesResponse,
-	AlbumsResponse,
-	AlbumType,
-	CurrentUserResponse,
-	makeApiCall,
-	UserResponse,
-} from "./api"
-import { Auth, Config } from "./config"
-import { AccountAnalysisResponse } from "./types"
-
-const baseUrl = "https://api.smugmug.com"
+import { analyzeAccount, testCredentials } from "./smugmug"
+import { Auth, Config } from "./smugmug/config"
+import { AccountAnalysisResponse } from "./smugmug/types"
 
 let mainWindow: BrowserWindow | null
 
@@ -81,125 +70,9 @@ ipcMain.handle("dialog:openFile", async event => {
 })
 
 ipcMain.handle("config:test", async (event, cfg: Auth): Promise<boolean> => {
-	const url = baseUrl + "/api/v2!authuser"
-	try {
-		const res = await makeApiCall<CurrentUserResponse>(url, cfg)
-		if (res.Code !== 200) {
-			console.log("config:test wrong response:", res)
-			return false
-		}
-		return true
-	} catch (err) {
-		console.error("config:test error:", err)
-		return false
-	}
+	return testCredentials(cfg)
 })
 
 ipcMain.handle("account:analyze", async (event, cfg: Config): Promise<AccountAnalysisResponse> => {
-	let url = baseUrl + "/api/v2!authuser"
-	let currentUser: string
-	try {
-		const res = await makeApiCall<CurrentUserResponse>(url, cfg.auth)
-		if (res.Code !== 200) {
-			console.log("account:analyze wrong response:", res)
-			return { IsValid: false }
-		}
-		currentUser = res.Response.User.NickName
-	} catch (err) {
-		console.error("account:analyze error:", err)
-		return { IsValid: false }
-	}
-
-	let userAlbumsURI: string
-	url = baseUrl + "/api/v2/user/" + currentUser
-	try {
-		const res = await makeApiCall<UserResponse>(url, cfg.auth)
-		if (res.Code !== 200) {
-			console.log("account:analyze wrong response:", res)
-			return { IsValid: false }
-		}
-		userAlbumsURI = res.Response.User.Uris.UserAlbums.Uri
-	} catch (err) {
-		console.error("account:analyze error:", err)
-		return { IsValid: false }
-	}
-
-	const albums = await getAlbums(cfg.auth, userAlbumsURI)
-
-	let numImages = 0
-	for (const album of albums) {
-		const images = await getAlbumImages(cfg, album.Uris.AlbumImages.Uri, album.UrlPath)
-		numImages += images.length
-	}
-	return { IsValid: true, Content: { Albums: albums.length, Images: numImages } }
+	return analyzeAccount(cfg)
 })
-
-async function getAlbums(cfg: Auth, firstURI: string): Promise<AlbumType[]> {
-	let uri = firstURI
-	let albums: AlbumType[] = []
-
-	while (uri) {
-		const res = await makeApiCall<AlbumsResponse>(baseUrl + uri, cfg)
-		if (res.Code !== 200) {
-			console.log("getAlbums wrong response:", res)
-			throw new Error("Invalid credentials")
-		}
-
-		albums.push(...res.Response.Album)
-		if (!res.Response.Pages.NextPage) {
-			break
-		}
-		uri = res.Response.Pages.NextPage
-	}
-
-	return albums
-}
-
-async function getAlbumImages(cfg: Config, firstURI: string, albumPath: string): Promise<AlbumImageType[]> {
-	let uri = firstURI
-	let images: AlbumImageType[] = []
-
-	while (uri) {
-		const res = await makeApiCall<AlbumsImagesResponse>(baseUrl + uri, cfg.auth)
-		if (res.Code !== 200) {
-			console.log("getAlbumImages wrong response:", res)
-			throw new Error("Invalid credentials")
-		}
-
-		// If the album is empty, a.Response.AlbumImage is missing instead of an empty array (weird...)
-		if (!res.Response.AlbumImage) {
-			console.log("album is empty: ", albumPath)
-
-			break
-		}
-
-		// Loop over response in inject the albumPath and then append to the images
-		for (const img of res.Response.AlbumImage) {
-			img.AlbumPath = albumPath
-
-			const fname = buildFilename(img, cfg.store.file_names)
-			if (!fname) {
-				console.log("cannot build image filename")
-			}
-			img.builtFilename = fname
-			images.push(img)
-		}
-		if (!res.Response.Pages.NextPage) {
-			break
-		}
-		uri = res.Response.Pages.NextPage
-	}
-
-	return images
-}
-
-function buildFilename(img: AlbumImageType, templateString: string): string {
-	const replacementVars = {
-		FileName: img.FileName,
-		ImageKey: img.ImageKey,
-		ArchivedMD5: img.ArchivedMD5,
-		UploadKey: img.UploadKey,
-	}
-
-	return renderString(templateString, replacementVars)
-}

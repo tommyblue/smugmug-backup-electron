@@ -5,7 +5,7 @@ export type Auth = {
 	user_secret: string
 }
 
-type Store = {
+export type Store = {
 	destination: string
 	file_names: string
 	use_metadata_times: boolean

@@ -5,13 +5,13 @@ import { toast } from "sonner"
 import Button from "../../components/nextui/Button"
 import Modal from "../../components/nextui/Modal"
 import useConfig from "../../hooks/config"
-import { AccountAnalysisResponse } from "../../smugmug/types"
+import { StoreAnalysisResponse } from "../../smugmug/types"
 
 export default function AnalysisPage(): JSX.Element {
 	const { t } = useTranslation()
 	const [isOpen, setIsOpen] = useState(false)
 	const [isAnalyzing, setIsAnalyzing] = useState(false)
-	const [analysisResult, setAnalysisResult] = useState<AccountAnalysisResponse | null>(null)
+	const [analysisResult, setAnalysisResult] = useState<StoreAnalysisResponse | null>(null)
 	const { config } = useConfig()
 
 	const onClose = () => {
@@ -21,9 +21,9 @@ export default function AnalysisPage(): JSX.Element {
 	function handleAnalyze() {
 		setIsAnalyzing(true)
 		window.api
-			.analyzeAccount(config)
-			.then((res: AccountAnalysisResponse) => {
-				console.log("account:analyze response:", res)
+			.analyzeStore(config.store)
+			.then((res: StoreAnalysisResponse) => {
+				console.log("store:analyze response:", res)
 				if (res) {
 					if (res.IsValid && res.Content) {
 						setAnalysisResult(res)
@@ -47,11 +47,11 @@ export default function AnalysisPage(): JSX.Element {
 					setIsOpen(true)
 				}}
 			>
-				{t("Analyze SmugMug account")}
+				{t("Analyze local store")}
 			</Button>
 			{isOpen && (
 				<Modal
-					title={t("Account analysis")}
+					title={t("Store analysis")}
 					isOpen={isOpen}
 					footer={
 						<>
@@ -77,7 +77,7 @@ export default function AnalysisPage(): JSX.Element {
 								<div className="text-default-500">
 									<ul>
 										<li>
-											{t("Albums")}: {analysisResult.Content!.Albums}
+											{t("Folders")}: {analysisResult.Content!.Folders}
 										</li>
 										<li>
 											{t("Images")}: {analysisResult.Content!.Images}
@@ -86,7 +86,7 @@ export default function AnalysisPage(): JSX.Element {
 								</div>
 							) : (
 								<div className="text-default-500">
-									{t("The operation analyzes the account for album and images. It may take a while.")}
+									{t("The operation analyzes the local store for folders (albums) and images. It may take a while.")}
 								</div>
 							)}
 						</>

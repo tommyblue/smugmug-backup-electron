@@ -7,6 +7,7 @@ declare global {
 			openFile: () => Promise<string[]>
 			testCredentials: (cfg: Auth) => Promise<boolean>
 			analyzeAccount: (cfg: Config) => Promise<AccountAnalysisResponse>
+			analyzeStore: (cfg: Store) => Promise<StoreAnalysisResponse>
 		}
 	}
 }

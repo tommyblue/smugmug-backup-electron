@@ -1,5 +1,5 @@
 import React from "react"
-import { Config, defaultConfig } from "../config"
+import { Config, defaultConfig } from "../smugmug/config"
 
 export default function useConfig() {
 	const [config, setConfig] = React.useState<Config>(() => {

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next"
 import AnalysisPage from "./pages/Analysis"
 import ConfigPage from "./pages/Configuration"
+import StoreAnalysisPage from "./pages/Store"
 
 const App = () => {
 	const { t } = useTranslation()
@@ -10,6 +11,7 @@ const App = () => {
 			<div className="container mx-auto columns-2 font-display">
 				{<ConfigPage />}
 				{<AnalysisPage />}
+				{<StoreAnalysisPage />}
 			</div>
 		</main>
 	)
