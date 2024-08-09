@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
 import path from "path"
 import { analyzeAccount, testCredentials } from "./smugmug"
-import { Auth, Config } from "./smugmug/config"
+import { Auth, Config, Store } from "./smugmug/config"
+import { analyzeStore, StoreAnalysisResponse } from "./smugmug/store"
 import { AccountAnalysisResponse } from "./smugmug/types"
 
 let mainWindow: BrowserWindow | null
@@ -75,4 +76,8 @@ ipcMain.handle("config:test", async (event, cfg: Auth): Promise<boolean> => {
 
 ipcMain.handle("account:analyze", async (event, cfg: Config): Promise<AccountAnalysisResponse> => {
 	return analyzeAccount(cfg)
+})
+
+ipcMain.handle("store:analyze", async (event, cfg: Store): Promise<StoreAnalysisResponse> => {
+	return analyzeStore(cfg)
 })

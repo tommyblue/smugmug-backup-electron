@@ -5,11 +5,3 @@ export type AccountAnalysisResponse = {
 		Images: number
 	}
 }
-
-export type StoreAnalysisResponse = {
-	IsValid: boolean
-	Content?: {
-		Folders: number
-		Images: number
-	}
-}
