@@ -1,5 +1,6 @@
+import fetch from "node-fetch"
+import Oauth from "../lib/oauth"
 import { Auth } from "./config"
-import Oauth from "./oauth"
 
 export type CurrentUserResponse = {
 	User: {
@@ -33,6 +34,18 @@ export type AlbumImageType = {
 
 	AlbumPath: string // not in API response, but used to store the path of the album
 	builtFilename: string // The final filename, after template replacements
+}
+
+export function AlbumImageName(image: AlbumImageType): string {
+	if (image.builtFilename != "") {
+		return image.builtFilename
+	}
+
+	if (image.FileName != "") {
+		return image.FileName
+	}
+
+	return image.ImageKey
 }
 
 export type AlbumType = {
@@ -70,16 +83,33 @@ export type AlbumsResponse = {
 	}
 }
 
-type ApiResponse<T extends CurrentUserResponse | UserResponse | AlbumsResponse | AlbumsImagesResponse> = {
+export type ImageMetadataResponse = {
+	DateTimeCreated: string
+	DateTimeModified: string
+}
+
+type ApiResponseTypes =
+	| CurrentUserResponse
+	| UserResponse
+	| AlbumsResponse
+	| AlbumsImagesResponse
+	| ImageMetadataResponse
+
+type ApiResponse<T extends ApiResponseTypes> = {
 	Code: number
 	Message: string
 	Response: T
 }
 
-export async function makeApiCall<T extends CurrentUserResponse | UserResponse | AlbumsResponse | AlbumsImagesResponse>(
-	url: string,
-	cfg: Auth
-): Promise<ApiResponse<T>> {
+export async function makeApiCall<T extends ApiResponseTypes>(url: string, cfg: Auth): Promise<ApiResponse<T>> {
+	const res = makeRawApiCall(url, cfg)
+		.then(res => res.json() as Promise<ApiResponse<T>>)
+		.then(json => json)
+
+	return res
+}
+
+export async function makeRawApiCall(url: string, cfg: Auth): Promise<fetch.Response> {
 	const oauth = new Oauth(cfg.api_key, cfg.api_secret, cfg.user_token, cfg.user_secret)
 	const h = oauth.authorizationHeader(url)
 
@@ -89,8 +119,6 @@ export async function makeApiCall<T extends CurrentUserResponse | UserResponse |
 			Authorization: h,
 		},
 	})
-		.then(res => res.json() as Promise<ApiResponse<T>>)
-		.then(json => json)
 
 	return res
 }

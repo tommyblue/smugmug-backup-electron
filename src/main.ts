@@ -1,9 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
 import path from "path"
-import { analyzeAccount, testCredentials } from "./smugmug"
-import { Auth, Config, Store } from "./smugmug/config"
+import { Account, AccountAnalysisResponse } from "./smugmug/account"
+import { makeBackup } from "./smugmug/backup"
+import { Config, Store } from "./smugmug/config"
 import { analyzeStore, StoreAnalysisResponse } from "./smugmug/store"
-import { AccountAnalysisResponse } from "./smugmug/types"
 
 let mainWindow: BrowserWindow | null
 
@@ -70,14 +70,21 @@ ipcMain.handle("dialog:openFile", async event => {
 	return result.filePaths
 })
 
-ipcMain.handle("config:test", async (event, cfg: Auth): Promise<boolean> => {
-	return testCredentials(cfg)
+ipcMain.handle("config:test", async (_: Electron.IpcMainInvokeEvent, cfg: Config): Promise<boolean> => {
+	return new Account(cfg).testCredentials()
 })
 
-ipcMain.handle("account:analyze", async (event, cfg: Config): Promise<AccountAnalysisResponse> => {
-	return analyzeAccount(cfg)
-})
+ipcMain.handle(
+	"account:analyze",
+	async (_: Electron.IpcMainInvokeEvent, cfg: Config): Promise<AccountAnalysisResponse> => {
+		return new Account(cfg).analyze()
+	}
+)
 
-ipcMain.handle("store:analyze", async (event, cfg: Store): Promise<StoreAnalysisResponse> => {
+ipcMain.handle("store:analyze", async (_: Electron.IpcMainInvokeEvent, cfg: Store): Promise<StoreAnalysisResponse> => {
 	return analyzeStore(cfg)
+})
+
+ipcMain.handle("backup:run", async (_: Electron.IpcMainInvokeEvent, cfg: Config) => {
+	return makeBackup(cfg)
 })

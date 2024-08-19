@@ -1,4 +1,3 @@
-// import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid"
 import { Checkbox, Input, Link, Button as ModalButton } from "@nextui-org/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -55,7 +54,7 @@ export default function (): JSX.Element {
 	function testCredentials() {
 		setIsTesting(true)
 		window.api
-			.testCredentials(tempConfig.auth)
+			.testCredentials(tempConfig)
 			.then((res: boolean) => {
 				if (res) {
 					toast.success(t("Credentials are valid"))

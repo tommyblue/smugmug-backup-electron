@@ -5,7 +5,7 @@ import { toast } from "sonner"
 import Button from "../../components/nextui/Button"
 import Modal from "../../components/nextui/Modal"
 import useConfig from "../../hooks/config"
-import { AccountAnalysisResponse } from "../../smugmug/types"
+import { AccountAnalysisResponse } from "../../smugmug/account"
 
 export default function AnalysisPage(): JSX.Element {
 	const { t } = useTranslation()

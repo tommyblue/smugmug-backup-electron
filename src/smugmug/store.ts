@@ -1,5 +1,5 @@
 import fs from "fs"
-import path from "path"
+import { walkSync } from "../lib/fs"
 import { Store } from "./config"
 
 export type StoreAnalysisResponse = {
@@ -39,25 +39,5 @@ export async function analyzeStore(cfg: Store): Promise<StoreAnalysisResponse> {
 	return {
 		IsValid: true,
 		Content: { Size: size, Folders: folders.length, Images: images.length, Videos: videos.length },
-	}
-}
-
-type File = {
-	name: string
-	size: number
-	folder: boolean
-}
-
-function* walkSync(dir: string): Generator<File> {
-	const files = fs.readdirSync(dir, { withFileTypes: true })
-	for (const file of files) {
-		if (file.isDirectory()) {
-			yield* walkSync(path.join(dir, file.name))
-			yield { name: path.join(dir, file.name), size: 0, folder: true }
-		} else {
-			const filePath = path.join(dir, file.name)
-			const stats = fs.statSync(filePath)
-			yield { name: filePath, size: stats.size, folder: false }
-		}
 	}
 }

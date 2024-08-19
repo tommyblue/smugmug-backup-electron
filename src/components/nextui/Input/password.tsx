@@ -1,6 +1,6 @@
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { Input, InputProps } from "@nextui-org/react"
 import { useEffect, useState } from "react"
-import { EyeIcon, EyeSlashIcon } from "./icons"
 
 interface IInputProps extends InputProps {
 	reveal?: boolean
@@ -54,9 +54,9 @@ export function PasswordInput(props: IInputProps): JSX.Element {
 					aria-label="toggle password visibility"
 				>
 					{isVisible ? (
-						<EyeSlashIcon className="text-2xl text-default-400 pointer-events-none" />
+						<EyeSlashIcon className="size-6 text-default-400" />
 					) : (
-						<EyeIcon className="text-2xl text-default-400 pointer-events-none" />
+						<EyeIcon className="size-6 text-default-400" />
 					)}
 				</button>
 			}
