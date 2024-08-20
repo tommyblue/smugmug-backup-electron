@@ -13,3 +13,10 @@ contextBridge.exposeInMainWorld("api", {
 	makeBackup: (cfg: Config): Promise<BackupResponse> => ipcRenderer.invoke("backup:run", cfg),
 	analyzeStore: (cfg: Store): Promise<string> => ipcRenderer.invoke("store:analyze", cfg),
 })
+
+contextBridge.exposeInMainWorld("comms", {
+	logMessage: (callback: (msg: string) => void) => ipcRenderer.on("log", (_event, value: string) => callback(value)),
+	// logMessage: (callback: (msg: string) => void) => ipcRenderer.on("log", (_event, value) => callback(value)),
+	downloadProgress: (callback: (total: number, progress: number) => void) =>
+		ipcRenderer.on("download-progress", (_event, total: number, progress: number) => callback(total, progress)),
+})

@@ -86,7 +86,13 @@ ipcMain.handle("store:analyze", async (_: Electron.IpcMainInvokeEvent, cfg: Stor
 })
 
 ipcMain.handle("backup:run", async (_: Electron.IpcMainInvokeEvent, cfg: Config) => {
-	const bk = new Backup(cfg)
-
+	const logger = (msg: string) => {
+		mainWindow!.webContents.send("log", msg)
+	}
+	const progressFn = (total: number, progress: number) => {
+		mainWindow!.webContents.send("download-progress", total, progress)
+	}
+	const bk = new Backup(cfg, logger, progressFn)
+	mainWindow?.webContents.send("log", "Starting backup")
 	return bk.Run()
 })

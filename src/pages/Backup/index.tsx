@@ -1,6 +1,6 @@
 import { ArrowDownOnSquareStackIcon } from "@heroicons/react/24/solid"
-import { Spinner } from "@nextui-org/react"
-import { useState } from "react"
+import { Progress, Spinner } from "@nextui-org/react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import Button from "../../components/nextui/Button"
@@ -12,6 +12,19 @@ export default function BackupPage() {
 	const { config } = useConfig()
 	const [isDownloading, setIsDownloading] = useState(false)
 	const [backupResult, setBackupResult] = useState<BackupResponse | null>(null)
+	const [messages, setMessages] = useState<string[]>([])
+	const [progress, setProgress] = useState(0)
+
+	useEffect(() => {
+		window.comms.logMessage((msg: string) => {
+			console.log("logMessage:", msg)
+			setMessages(prev => [...prev, msg])
+		})
+		window.comms.downloadProgress((total: number, progress: number) => {
+			console.log("downloadProgress:", total, progress, Math.floor((progress * 100) / total))
+			setProgress(Math.floor((progress * 100) / total))
+		})
+	}, [])
 
 	function handleBackup() {
 		setIsDownloading(true)
@@ -50,9 +63,15 @@ export default function BackupPage() {
 			{isDownloading && (
 				<div className="text-lg">
 					<Spinner label={t("Backup is running...")} />
+					<Progress aria-label="Loading..." value={progress} className="max-w-md" />
 				</div>
 			)}
 			{backupResult && <div className="text-lg">{backupResult.IsValid ? t("Backup done") : t("Backup failed")}</div>}
+			<pre className="text-lg">
+				{messages.map((msg, i) => (
+					<div key={i}>{msg}</div>
+				))}
+			</pre>
 		</div>
 	)
 }

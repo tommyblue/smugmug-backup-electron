@@ -10,5 +10,9 @@ declare global {
 			makeBackup: (cfg: Config) => Promise<BackupResponse>
 			analyzeStore: (cfg: Store) => Promise<StoreAnalysisResponse>
 		}
+		comms: {
+			logMessage: (callback: (string) => void) => void
+			downloadProgress: (callback: (total: number, progress: number) => void) => void
+		}
 	}
 }

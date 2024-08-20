@@ -16,11 +16,19 @@ export type BackupResponse = {
 	Content?: string
 }
 
+type LogFn = (msg: string) => void
+type ProgressFn = (total: number, progress: number) => void
 export class Backup {
 	private _cfg: Config
+	private logger: LogFn
+	private progressFn: ProgressFn
+	private totalImages: number = 0
+	private downloadedImages: number = 0
 
-	constructor(cfg: Config) {
+	constructor(cfg: Config, logFn: LogFn, progressFn: ProgressFn) {
 		this._cfg = cfg
+		this.logger = logFn
+		this.progressFn = progressFn
 	}
 
 	async Run(): Promise<BackupResponse> {
@@ -33,15 +41,17 @@ export class Backup {
 		}
 
 		for (const album of info.Albums!) {
+			this.totalImages += album.Images.length
+		}
+		this.logger("Found " + info.Albums!.length + " albums")
+		this.logger("Found " + this.totalImages + " images")
+		this.progressFn(this.totalImages, this.downloadedImages)
+
+		for (const album of info.Albums!) {
 			// check if the folder exists or create it
 			if (!fs.existsSync(album.Folder)) {
 				fs.mkdirSync(album.Folder, { recursive: true })
 			}
-
-			// // download each image
-			// for (const image of album.Images) {
-			// 	this.download(image, album.Folder)
-			// }
 
 			const promises: Promise<void>[] = []
 			for (let i = 0; i < album.Images.length; i++) {
@@ -88,6 +98,9 @@ export class Backup {
 			console.error("Error downloading image:", image)
 			return
 		}
+
+		this.downloadedImages++
+		this.progressFn(this.totalImages, this.downloadedImages)
 
 		if (this._cfg.store.use_metadata_times) {
 			await this.setChTime(image, dest)
