@@ -1,7 +1,14 @@
 import fs from "fs"
 import path from "path"
 import { Account } from "./account"
-import { AlbumImageName, AlbumImageType, ImageMetadataResponse, makeApiCall, makeRawApiCall } from "./api"
+import {
+	AlbumImageName,
+	AlbumImageType,
+	AlbumVideoResponse,
+	ImageMetadataResponse,
+	makeApiCall,
+	makeRawApiCall,
+} from "./api"
 import { Config } from "./config"
 
 export type BackupResponse = {
@@ -39,7 +46,21 @@ export class Backup {
 				}
 
 				const dest = path.join(album.Folder, imageName)
-				const ok = await this.download(dest, image.ArchivedUri, image.ArchivedSize, image.IsVideo)
+
+				let downloadFn = this.downloadImage
+				let uri = image.ArchivedUri
+				if (image.IsVideo) {
+					// Skip videos if under processing
+					if (image.Processing && this._cfg.store.force_video_download) {
+						console.log("skipping video", imageName, "because under processing")
+						continue
+					}
+
+					downloadFn = this.downloadVideo
+					uri = image.Uris.LargestVideo.Uri
+				}
+
+				const ok = await downloadFn(dest, uri, image.ArchivedSize)
 
 				if (!ok) {
 					// TODO: notify user
@@ -54,14 +75,6 @@ export class Backup {
 		}
 
 		return { IsValid: true, Content: "Backup content" }
-	}
-
-	private async download(dest: string, uri: string, size: number, isVideo: boolean = false): Promise<boolean> {
-		if (isVideo) {
-			return this.downloadVideo(dest, uri, size)
-		}
-
-		return this.downloadImage(dest, uri, size)
 	}
 
 	private async downloadImage(dest: string, uri: string, size: number): Promise<boolean> {
@@ -87,8 +100,28 @@ export class Backup {
 		return true
 	}
 
-	private async downloadVideo(dest: string, uri: string, size: number): Promise<boolean> {
-		throw new Error("Not implemented")
+	private async downloadVideo(dest: string, uri: string, _: number): Promise<boolean> {
+		const video = await makeApiCall<AlbumVideoResponse>(uri, this._cfg.auth)
+
+		if (this.checkFileWithSameSize(dest, video.Response.LargestVideo.Size)) {
+			console.log("File already exists with the same size:", dest)
+			return true
+		}
+		const response = await makeRawApiCall(video.Response.LargestVideo.Url, this._cfg.auth)
+		if (!response.ok || !response.body) {
+			console.error("Error downloading image:", response)
+			return false
+		}
+
+		const buffer = await response.buffer()
+		try {
+			fs.writeFileSync(dest, buffer)
+		} catch (err) {
+			console.error("Error writing file:", err)
+			return false
+		}
+
+		return true
 	}
 
 	// Check if the destination file already exists and has the same size

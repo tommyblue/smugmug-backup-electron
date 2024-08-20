@@ -83,6 +83,13 @@ export type AlbumsResponse = {
 	}
 }
 
+export type AlbumVideoResponse = {
+	LargestVideo: {
+		Size: number
+		Url: string
+	}
+}
+
 export type ImageMetadataResponse = {
 	DateTimeCreated: string
 	DateTimeModified: string
@@ -94,6 +101,7 @@ type ApiResponseTypes =
 	| AlbumsResponse
 	| AlbumsImagesResponse
 	| ImageMetadataResponse
+	| AlbumVideoResponse
 
 type ApiResponse<T extends ApiResponseTypes> = {
 	Code: number
