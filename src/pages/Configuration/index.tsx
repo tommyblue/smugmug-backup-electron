@@ -192,19 +192,6 @@ export default function (): JSX.Element {
 							classNames={{
 								label: "textsmall",
 							}}
-							isSelected={tempConfig.store.force_metadata_times}
-							onValueChange={v =>
-								setTempConfig({ ...tempConfig, store: { ...tempConfig.store, force_metadata_times: v } })
-							}
-						>
-							{t("Force metadata times")}
-						</Checkbox>
-					</div>
-					<div className="flex py-2 px-1 justify-between">
-						<Checkbox
-							classNames={{
-								label: "textsmall",
-							}}
 							isSelected={tempConfig.store.write_csv}
 							onValueChange={v => setTempConfig({ ...tempConfig, store: { ...tempConfig.store, write_csv: v } })}
 						>

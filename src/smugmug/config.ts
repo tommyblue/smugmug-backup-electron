@@ -9,7 +9,6 @@ export type Store = {
 	destination: string
 	file_names: string
 	use_metadata_times: boolean
-	force_metadata_times: boolean
 	write_csv: boolean
 	force_video_download: boolean
 	concurrent_albums: number
@@ -32,7 +31,6 @@ export const defaultConfig: Config = {
 		destination: "",
 		file_names: "{{.FileName}}",
 		use_metadata_times: false,
-		force_metadata_times: false,
 		write_csv: false,
 		force_video_download: false,
 		concurrent_albums: 1,

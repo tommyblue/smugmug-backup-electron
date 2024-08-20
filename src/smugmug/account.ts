@@ -58,6 +58,7 @@ export class Account {
 		}
 
 		const rawAlbums = await this.getAlbums(userAlbumsURI)
+		console.log("Found", rawAlbums.length, "albums")
 		const albums: AlbumsInfo[] = []
 		for (const album of rawAlbums) {
 			const images = await this.getAlbumImages(album.Uris.AlbumImages.Uri, album.UrlPath)
@@ -114,15 +115,16 @@ export class Account {
 			}
 
 			albums.push(...res.Response.Album)
+
 			if (!res.Response.Pages.NextPage) {
 				break
 			}
 			uri = res.Response.Pages.NextPage
+		}
 
-			if (process.env.NODE_ENV === "debug") {
-				// For debugging purposes, limit the number of albums to 1
-				return albums
-			}
+		if (process.env.NODE_ENV === "debug") {
+			// For debugging purposes, limit the number of albums to 1
+			return albums.slice(0, 1)
 		}
 
 		return albums

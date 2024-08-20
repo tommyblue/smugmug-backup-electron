@@ -40,7 +40,14 @@ export class Backup {
 
 				const dest = path.join(album.Folder, imageName)
 				const ok = await this.download(dest, image.ArchivedUri, image.ArchivedSize, image.IsVideo)
-				if (this._cfg.store.use_metadata_times && (ok || this._cfg.store.force_metadata_times)) {
+
+				if (!ok) {
+					// TODO: notify user
+					console.error("Error downloading image:", image)
+					continue
+				}
+
+				if (this._cfg.store.use_metadata_times) {
 					await this.setChTime(image, dest)
 				}
 			}
@@ -63,8 +70,6 @@ export class Backup {
 			return true
 		}
 
-		console.log("Downloading image:", uri)
-
 		const response = await makeRawApiCall(uri, this._cfg.auth)
 		if (!response.ok || !response.body) {
 			console.error("Error downloading image:", response)
@@ -73,7 +78,7 @@ export class Backup {
 
 		const buffer = await response.buffer()
 		try {
-			fs.writeFile(dest, buffer, () => console.log("finished downloading!"))
+			fs.writeFileSync(dest, buffer)
 		} catch (err) {
 			console.error("Error writing file:", err)
 			return false

@@ -102,6 +102,9 @@ type ApiResponse<T extends ApiResponseTypes> = {
 }
 
 export async function makeApiCall<T extends ApiResponseTypes>(url: string, cfg: Auth): Promise<ApiResponse<T>> {
+	if (process.env.NODE_ENV === "debug") {
+		console.log("Making API call to:", url)
+	}
 	const res = makeRawApiCall(url, cfg)
 		.then(res => res.json() as Promise<ApiResponse<T>>)
 		.then(json => json)
