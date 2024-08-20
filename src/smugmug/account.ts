@@ -19,14 +19,14 @@ export type AccountAnalysisResponse = {
 	}
 }
 
-type AlbumBackupInfo = {
+type AlbumsInfo = {
 	Folder: string
 	Images: AlbumImageType[]
 }
 
-export type BackupInfo = {
+export type AccountInfo = {
 	IsValid: boolean
-	Albums?: AlbumBackupInfo[]
+	Albums?: AlbumsInfo[]
 }
 
 export class Account {
@@ -37,7 +37,7 @@ export class Account {
 		this._cfg = cfg
 	}
 
-	async info(): Promise<BackupInfo> {
+	async info(): Promise<AccountInfo> {
 		const currentUser = await this.getUser()
 		if (!currentUser) {
 			return { IsValid: false }
@@ -58,7 +58,7 @@ export class Account {
 		}
 
 		const rawAlbums = await this.getAlbums(userAlbumsURI)
-		const albums: AlbumBackupInfo[] = []
+		const albums: AlbumsInfo[] = []
 		for (const album of rawAlbums) {
 			const images = await this.getAlbumImages(album.Uris.AlbumImages.Uri, album.UrlPath)
 			albums.push({ Folder: path.join(this._cfg.store.destination, album.UrlPath), Images: images })

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron"
 import path from "path"
 import { Account, AccountAnalysisResponse } from "./smugmug/account"
-import { makeBackup } from "./smugmug/backup"
+import { Backup } from "./smugmug/backup"
 import { Config, Store } from "./smugmug/config"
 import { analyzeStore, StoreAnalysisResponse } from "./smugmug/store"
 
@@ -86,5 +86,7 @@ ipcMain.handle("store:analyze", async (_: Electron.IpcMainInvokeEvent, cfg: Stor
 })
 
 ipcMain.handle("backup:run", async (_: Electron.IpcMainInvokeEvent, cfg: Config) => {
-	return makeBackup(cfg)
+	const bk = new Backup(cfg)
+
+	return bk.Run()
 })
