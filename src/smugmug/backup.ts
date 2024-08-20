@@ -38,48 +38,67 @@ export class Backup {
 				fs.mkdirSync(album.Folder, { recursive: true })
 			}
 
-			// download each image
-			for (const image of album.Images) {
-				const imageName = AlbumImageName(image)
-				if (imageName === "") {
-					continue
-				}
+			// // download each image
+			// for (const image of album.Images) {
+			// 	this.download(image, album.Folder)
+			// }
 
-				const dest = path.join(album.Folder, imageName)
+			const promises: Promise<void>[] = []
+			for (let i = 0; i < album.Images.length; i++) {
+				const promise = this.download(album.Images[i], album.Folder)
+				promises.push(promise)
 
-				let downloadFn = this.downloadImage
-				let uri = image.ArchivedUri
-				if (image.IsVideo) {
-					// Skip videos if under processing
-					if (image.Processing && this._cfg.store.force_video_download) {
-						console.log("skipping video", imageName, "because under processing")
-						continue
-					}
-
-					downloadFn = this.downloadVideo
-					uri = image.Uris.LargestVideo.Uri
-				}
-
-				const ok = await downloadFn(dest, uri, image.ArchivedSize)
-
-				if (!ok) {
-					// TODO: notify user
-					console.error("Error downloading image:", image)
-					continue
-				}
-
-				if (this._cfg.store.use_metadata_times) {
-					await this.setChTime(image, dest)
+				if (promises.length === this._cfg.store.concurrent_downloads) {
+					await Promise.race(promises)
+					promises.splice(
+						promises.findIndex(p => p === promise),
+						1
+					)
 				}
 			}
+			await Promise.all(promises)
 		}
 
 		return { IsValid: true, Content: "Backup content" }
 	}
 
+	private async download(image: AlbumImageType, folder: string) {
+		const imageName = AlbumImageName(image)
+		if (imageName === "") {
+			return
+		}
+
+		const dest = path.join(folder, imageName)
+
+		let ok = false
+		if (image.IsVideo) {
+			// Skip videos if under processing
+			if (image.Processing && !this._cfg.store.force_video_download) {
+				console.log("skipping video", image.FileName, "because under processing")
+				return
+			}
+
+			ok = await this.downloadVideo(dest, image.Uris.LargestVideo.Uri, image.ArchivedSize)
+		} else {
+			ok = await this.downloadImage(dest, image.ArchivedUri, image.ArchivedSize)
+		}
+
+		if (!ok) {
+			// TODO: notify user
+			console.error("Error downloading image:", image)
+			return
+		}
+
+		if (this._cfg.store.use_metadata_times) {
+			await this.setChTime(image, dest)
+		}
+	}
+
 	private async downloadImage(dest: string, uri: string, size: number): Promise<boolean> {
 		if (this.checkFileWithSameSize(dest, size)) {
-			console.log("File already exists with the same size:", dest)
+			if (process.env.NODE_ENV === "debug") {
+				console.log("File already exists with the same size:", dest)
+			}
 			return true
 		}
 
@@ -101,10 +120,15 @@ export class Backup {
 	}
 
 	private async downloadVideo(dest: string, uri: string, _: number): Promise<boolean> {
-		const video = await makeApiCall<AlbumVideoResponse>(uri, this._cfg.auth)
+		const video = await makeApiCall<AlbumVideoResponse>(Account.baseUrl + uri, this._cfg.auth)
+		if (process.env.NODE_ENV === "debug") {
+			console.log("Downloading video:", uri, "to", dest, "size:", video.Response.LargestVideo.Size)
+		}
 
 		if (this.checkFileWithSameSize(dest, video.Response.LargestVideo.Size)) {
-			console.log("File already exists with the same size:", dest)
+			if (process.env.NODE_ENV === "debug") {
+				console.log("File already exists with the same size:", dest)
+			}
 			return true
 		}
 		const response = await makeRawApiCall(video.Response.LargestVideo.Url, this._cfg.auth)

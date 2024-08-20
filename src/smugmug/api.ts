@@ -109,9 +109,21 @@ type ApiResponse<T extends ApiResponseTypes> = {
 	Response: T
 }
 
+function isValidUrl(url: string) {
+	try {
+		new URL(url)
+		return true
+	} catch (err) {
+		return false
+	}
+}
+
 export async function makeApiCall<T extends ApiResponseTypes>(url: string, cfg: Auth): Promise<ApiResponse<T>> {
 	if (process.env.NODE_ENV === "debug") {
 		console.log("Making API call to:", url)
+	}
+	if (!isValidUrl(url)) {
+		throw new Error("Invalid URL: " + url)
 	}
 	const res = makeRawApiCall(url, cfg)
 		.then(res => res.json() as Promise<ApiResponse<T>>)
@@ -121,6 +133,9 @@ export async function makeApiCall<T extends ApiResponseTypes>(url: string, cfg: 
 }
 
 export async function makeRawApiCall(url: string, cfg: Auth): Promise<fetch.Response> {
+	if (!isValidUrl(url)) {
+		throw new Error("Invalid URL: " + url)
+	}
 	const oauth = new Oauth(cfg.api_key, cfg.api_secret, cfg.user_token, cfg.user_secret)
 	const h = oauth.authorizationHeader(url)
 

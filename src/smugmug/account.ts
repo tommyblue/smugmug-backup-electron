@@ -28,7 +28,6 @@ export type AccountInfo = {
 	IsValid: boolean
 	Albums?: AlbumsInfo[]
 }
-
 export class Account {
 	private _cfg: Config
 	static baseUrl = "https://api.smugmug.com"
@@ -60,12 +59,30 @@ export class Account {
 		const rawAlbums = await this.getAlbums(userAlbumsURI)
 		console.log("Found", rawAlbums.length, "albums")
 		const albums: AlbumsInfo[] = []
-		for (const album of rawAlbums) {
-			const images = await this.getAlbumImages(album.Uris.AlbumImages.Uri, album.UrlPath)
-			albums.push({ Folder: path.join(this._cfg.store.destination, album.UrlPath), Images: images })
+		const promises: Promise<void>[] = []
+
+		for (let i = 0; i < rawAlbums.length; i++) {
+			const promise = this.fetchImagesInfo(rawAlbums[i]).then(album => {
+				albums.push(album)
+			})
+			promises.push(promise)
+
+			if (promises.length === this._cfg.store.concurrent_albums) {
+				await Promise.race(promises)
+				promises.splice(
+					promises.findIndex(p => p === promise),
+					1
+				)
+			}
 		}
+		await Promise.all(promises)
 
 		return { IsValid: true, Albums: albums }
+	}
+
+	async fetchImagesInfo(album: AlbumType): Promise<AlbumsInfo> {
+		const images = await this.getAlbumImages(album.Uris.AlbumImages.Uri, album.UrlPath)
+		return { Folder: path.join(this._cfg.store.destination, album.UrlPath), Images: images }
 	}
 
 	async analyze(): Promise<AccountAnalysisResponse> {
@@ -120,11 +137,10 @@ export class Account {
 				break
 			}
 			uri = res.Response.Pages.NextPage
-		}
-
-		if (process.env.NODE_ENV === "debug") {
-			// For debugging purposes, limit the number of albums to 1
-			return albums.slice(0, 1)
+			if (process.env.NODE_ENV === "debug") {
+				// For debugging purposes, limit the number of albums to 1
+				return albums.slice(0, 1)
+			}
 		}
 
 		return albums
@@ -143,8 +159,9 @@ export class Account {
 
 			// If the album is empty, a.Response.AlbumImage is missing instead of an empty array (weird...)
 			if (!res.Response.AlbumImage) {
-				console.log("album is empty: ", albumPath)
-
+				if (process.env.NODE_ENV === "debug") {
+					console.log("album is empty: ", albumPath)
+				}
 				break
 			}
 
