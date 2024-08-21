@@ -1,5 +1,5 @@
 import { ArrowDownOnSquareStackIcon } from "@heroicons/react/24/solid"
-import { Progress, Spinner } from "@nextui-org/react"
+import { Progress, Snippet, Spinner } from "@nextui-org/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -7,14 +7,19 @@ import Button from "../../components/nextui/Button"
 import useConfig from "../../hooks/config"
 import { BackupResponse } from "../../smugmug/backup"
 
+type DownloadInfo = {
+	total: number
+	progress: number
+	percentage: number
+}
+
 export default function BackupPage() {
 	const { t } = useTranslation()
 	const { config } = useConfig()
 	const [isDownloading, setIsDownloading] = useState(false)
 	const [backupResult, setBackupResult] = useState<BackupResponse | null>(null)
 	const [messages, setMessages] = useState<string[]>([])
-	const [progress, setProgress] = useState(0)
-
+	const [progress, setProgress] = useState<DownloadInfo>({ total: 0, progress: 0, percentage: 0 })
 	useEffect(() => {
 		window.comms.logMessage((msg: string) => {
 			console.log("logMessage:", msg)
@@ -22,7 +27,7 @@ export default function BackupPage() {
 		})
 		window.comms.downloadProgress((total: number, progress: number) => {
 			console.log("downloadProgress:", total, progress, Math.floor((progress * 100) / total))
-			setProgress(Math.floor((progress * 100) / total))
+			setProgress({ total, progress, percentage: Math.floor((progress * 100) / total) })
 		})
 	}, [])
 
@@ -71,15 +76,22 @@ export default function BackupPage() {
 			{isDownloading && (
 				<div className="text-lg">
 					<Spinner label={t("Backup is running...")} />
-					<Progress aria-label="Loading..." value={progress} className="max-w-md" />
+					<Progress
+						label={t(`${progress.progress} over ${progress.total}`)}
+						isStriped
+						color="secondary"
+						aria-label="Loading..."
+						value={progress.percentage}
+						className="max-w-md"
+					/>
 				</div>
 			)}
 			{backupResult && <div className="text-lg">{backupResult.IsValid ? t("Backup done") : t("Backup failed")}</div>}
-			<pre className="text-lg">
+			<Snippet hideSymbol hideCopyButton size="sm">
 				{messages.map((msg, i) => (
-					<div key={i}>{msg}</div>
+					<span key={i}>{msg}</span>
 				))}
-			</pre>
+			</Snippet>
 		</div>
 	)
 }
