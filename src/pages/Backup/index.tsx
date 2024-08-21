@@ -22,14 +22,16 @@ export default function BackupPage() {
 	const [progress, setProgress] = useState<DownloadInfo>({ total: 0, progress: 0, percentage: 0 })
 	useEffect(() => {
 		window.comms.logMessage((msg: string) => {
-			console.log("logMessage:", msg)
 			setMessages(prev => [...prev, msg])
 		})
-		window.comms.downloadProgress((total: number, progress: number) => {
-			console.log("downloadProgress:", total, progress, Math.floor((progress * 100) / total))
-			setProgress({ total, progress, percentage: Math.floor((progress * 100) / total) })
+		window.comms.downloadProgress((total: number, p: number) => {
+			setProgress(_ => ({ total: total, progress: p, percentage: Math.floor((p * 100) / total) }))
 		})
 	}, [])
+
+	useEffect(() => {
+		console.log("downloadProgress:", progress)
+	}, [progress])
 
 	function handleBackup() {
 		if (isDownloading) {
@@ -77,8 +79,7 @@ export default function BackupPage() {
 				<div className="text-lg">
 					<Spinner label={t("Backup is running...")} />
 					<Progress
-						label={t(`${progress.progress} over ${progress.total}`)}
-						isStriped
+						label={t(`${progress.progress} out of ${progress.total}`)}
 						color="secondary"
 						aria-label="Loading..."
 						value={progress.percentage}

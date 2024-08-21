@@ -128,9 +128,20 @@ export async function makeApiCall<T extends ApiResponseTypes>(url: string, cfg: 
 	const res = makeRawApiCall(url, cfg)
 		.then(res => res.json() as Promise<ApiResponse<T>>)
 		.then(json => json)
+		.catch(err => {
+			console.error("Error fetching", url, ":", err)
+			return {
+				Code: 500,
+				Message: "Error fetching " + url,
+				Response: {} as T,
+			}
+		})
 
 	return res
 }
+
+let concurrentRequests = 0
+const maxConcurrentRequests = 10
 
 export async function makeRawApiCall(url: string, cfg: Auth): Promise<fetch.Response> {
 	if (!isValidUrl(url)) {
@@ -139,12 +150,41 @@ export async function makeRawApiCall(url: string, cfg: Auth): Promise<fetch.Resp
 	const oauth = new Oauth(cfg.api_key, cfg.api_secret, cfg.user_token, cfg.user_secret)
 	const h = oauth.authorizationHeader(url)
 
-	const res = await fetch(url, {
-		headers: {
-			Accept: "application/json",
-			Authorization: h,
-		},
-	})
+	while (concurrentRequests >= maxConcurrentRequests) {
+		if (process.env.NODE_ENV === "debug") {
+			console.log("Too many concurrent requests, waiting")
+		}
+		await new Promise(resolve => setTimeout(resolve, 500))
+	}
 
-	return res
+	const maxRetries = 3
+	for (let i = 1; i <= maxRetries; i++) {
+		concurrentRequests++
+		const res = await fetch(url, {
+			headers: {
+				Accept: "application/json",
+				Authorization: h,
+			},
+		}).finally(() => {
+			concurrentRequests--
+		})
+
+		if (res.status < 400) {
+			return res
+		}
+
+		if (i === maxRetries) {
+			console.error("Error fetching", url, ", max retries reached")
+
+			return fetch.Response.error()
+		}
+
+		if (res.status === 429) {
+			console.log("Rate limited, waiting 10s")
+			i--
+			return new Promise(resolve => setTimeout(resolve, 10000))
+		}
+	}
+
+	return fetch.Response.error()
 }

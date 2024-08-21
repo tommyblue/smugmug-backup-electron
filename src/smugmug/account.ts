@@ -59,23 +59,38 @@ export class Account {
 		const rawAlbums = await this.getAlbums(userAlbumsURI)
 		console.log("Found", rawAlbums.length, "albums")
 		const albums: AlbumsInfo[] = []
-		const promises: Promise<void>[] = []
+		// const promises: Promise<void>[] = []
 
-		for (let i = 0; i < rawAlbums.length; i++) {
-			const promise = this.fetchImagesInfo(rawAlbums[i]).then(album => {
-				albums.push(album)
-			})
-			promises.push(promise)
+		// for (let i = 0; i < rawAlbums.length; i++) {
+		// 	const promise = this.fetchImagesInfo(rawAlbums[i]).then(album => {
+		// 		albums.push(album)
+		// 	})
+		// 	promises.push(promise)
 
-			if (promises.length === this._cfg.store.concurrent_albums) {
-				await Promise.race(promises)
-				promises.splice(
-					promises.findIndex(p => p === promise),
-					1
-				)
-			}
+		// 	if (promises.length === this._cfg.store.concurrent_albums) {
+		// 		await Promise.race(promises)
+		// 		promises.splice(
+		// 			promises.findIndex(p => p === promise),
+		// 			1
+		// 		)
+		// 	}
+		// }
+		// await Promise.all(promises)
+		let total = rawAlbums.length
+		for (const album of rawAlbums) {
+			this.fetchImagesInfo(album)
+				.then(albumInfo => albums.push(albumInfo))
+				.finally(() => {
+					total--
+					if (process.env.NODE_ENV === "debug") {
+						console.log("Remaining albums:", total)
+					}
+				})
 		}
-		await Promise.all(promises)
+
+		while (total > 0) {
+			await new Promise(resolve => setTimeout(resolve, 500))
+		}
 
 		return { IsValid: true, Albums: albums }
 	}

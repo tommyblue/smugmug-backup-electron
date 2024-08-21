@@ -34,6 +34,7 @@ export class Backup {
 	async Run(): Promise<BackupResponse> {
 		const account = new Account(this._cfg)
 
+		this.logger("Analyzing account...")
 		const info = await account.info()
 
 		if (!info.IsValid) {
@@ -43,8 +44,7 @@ export class Backup {
 		for (const album of info.Albums!) {
 			this.totalImages += album.Images.length
 		}
-		this.logger("Found " + info.Albums!.length + " albums")
-		this.logger("Found " + this.totalImages + " images")
+		this.logger("Found " + info.Albums!.length + " albums and " + this.totalImages + " photos")
 		this.progressFn(this.totalImages, this.downloadedImages)
 
 		for (const album of info.Albums!) {
@@ -53,20 +53,32 @@ export class Backup {
 				fs.mkdirSync(album.Folder, { recursive: true })
 			}
 
-			const promises: Promise<void>[] = []
-			for (let i = 0; i < album.Images.length; i++) {
-				const promise = this.download(album.Images[i], album.Folder)
-				promises.push(promise)
+			// const promises: Promise<void>[] = []
+			// for (let i = 0; i < album.Images.length; i++) {
+			// 	const promise = this.download(album.Images[i], album.Folder)
+			// 	promises.push(promise)
 
-				if (promises.length === this._cfg.store.concurrent_downloads) {
-					await Promise.race(promises)
-					promises.splice(
-						promises.findIndex(p => p === promise),
-						1
-					)
-				}
+			// 	if (promises.length === this._cfg.store.concurrent_downloads) {
+			// 		await Promise.race(promises)
+			// 		promises.splice(
+			// 			promises.findIndex(p => p === promise),
+			// 			1
+			// 		)
+			// 	}
+			// }
+			// await Promise.all(promises)
+			let total = album.Images.length
+			for (const image of album.Images) {
+				this.download(image, album.Folder).finally(() => {
+					total--
+					if (process.env.NODE_ENV === "debug") {
+						console.log("Remaining downloads:", total)
+					}
+				})
 			}
-			await Promise.all(promises)
+			while (total > 0) {
+				await new Promise(resolve => setTimeout(resolve, 1000))
+			}
 		}
 
 		return { IsValid: true, Content: "Backup content" }
@@ -79,6 +91,7 @@ export class Backup {
 		}
 
 		const dest = path.join(folder, imageName)
+		this.logger(dest)
 
 		let ok = false
 		if (image.IsVideo) {
