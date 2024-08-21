@@ -1,4 +1,4 @@
-import { ArrowDownOnSquareStackIcon } from "@heroicons/react/24/solid"
+import { ArrowDownOnSquareStackIcon, StopCircleIcon } from "@heroicons/react/24/solid"
 import { Progress, Snippet, Spinner } from "@nextui-org/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -33,15 +33,21 @@ export default function BackupPage() {
 		console.log("downloadProgress:", progress)
 	}, [progress])
 
+	function cleanup() {
+		setIsDownloading(false)
+		setBackupResult(null)
+		setMessages([])
+		setProgress({ total: 0, progress: 0, percentage: 0 })
+	}
+
 	function handleBackup() {
 		if (isDownloading) {
 			toast.error(t("Backup already running"))
 			return
 		}
 
+		cleanup()
 		setIsDownloading(true)
-		setMessages([])
-		setBackupResult(null)
 
 		window.api
 			.makeBackup(config)
@@ -63,17 +69,28 @@ export default function BackupPage() {
 			})
 	}
 
+	function stopBackup() {
+		window.api.stopBackup()
+		cleanup()
+	}
+
 	return (
 		<div className="flex flex-col items-center justify-center">
 			<div className="text-4xl font-bold">Backup</div>
 			<div className="text-lg">
-				<Button
-					onClick={handleBackup}
-					color="primary"
-					endContent={<ArrowDownOnSquareStackIcon className="size-6 text-white-400" />}
-				>
-					{t("Download")}
-				</Button>
+				{isDownloading ? (
+					<Button color="danger" onClick={stopBackup} endContent={<StopCircleIcon className="size-6 text-white-400" />}>
+						{t("Stop!")}
+					</Button>
+				) : (
+					<Button
+						onClick={handleBackup}
+						color="primary"
+						endContent={<ArrowDownOnSquareStackIcon className="size-6 text-white-400" />}
+					>
+						{t("Download")}
+					</Button>
+				)}
 			</div>
 			{isDownloading && (
 				<div className="text-lg">
@@ -87,7 +104,11 @@ export default function BackupPage() {
 					/>
 				</div>
 			)}
-			{backupResult && <div className="text-lg">{backupResult.IsValid ? t("Backup done") : t("Backup failed")}</div>}
+			{backupResult && (
+				<div className="text-lg">
+					{backupResult.IsValid ? backupResult.Content : t("Backup failed: ") + backupResult.Content}
+				</div>
+			)}
 			<Snippet hideSymbol hideCopyButton size="sm">
 				{messages.map((msg, i) => (
 					<span key={i}>{msg}</span>

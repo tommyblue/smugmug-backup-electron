@@ -10,7 +10,9 @@ contextBridge.exposeInMainWorld("api", {
 	openFile: () => ipcRenderer.invoke("dialog:openFile"),
 	testCredentials: (cfg: Config): Promise<boolean> => ipcRenderer.invoke("config:test", cfg),
 	analyzeAccount: (cfg: Config): Promise<AccountAnalysisResponse> => ipcRenderer.invoke("account:analyze", cfg),
+	stopAccountAnalysis: (): Promise<void> => ipcRenderer.invoke("account:analyze-stop"),
 	makeBackup: (cfg: Config): Promise<BackupResponse> => ipcRenderer.invoke("backup:run", cfg),
+	stopBackup: (): Promise<void> => ipcRenderer.invoke("backup:stop"),
 	analyzeStore: (cfg: Store): Promise<string> => ipcRenderer.invoke("store:analyze", cfg),
 })
 

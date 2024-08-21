@@ -74,16 +74,29 @@ ipcMain.handle("config:test", async (_: Electron.IpcMainInvokeEvent, cfg: Config
 	return new Account(cfg).testCredentials()
 })
 
+let AccountInstance: Account | null = null
+
 ipcMain.handle(
 	"account:analyze",
 	async (_: Electron.IpcMainInvokeEvent, cfg: Config): Promise<AccountAnalysisResponse> => {
-		return new Account(cfg).analyze()
+		if (!AccountInstance) {
+			AccountInstance = new Account(cfg)
+		}
+		return AccountInstance.analyze()
 	}
 )
+
+ipcMain.handle("account:analyze-stop", async () => {
+	if (AccountInstance) {
+		AccountInstance.stop()
+	}
+})
 
 ipcMain.handle("store:analyze", async (_: Electron.IpcMainInvokeEvent, cfg: Store): Promise<StoreAnalysisResponse> => {
 	return analyzeStore(cfg)
 })
+
+let BackupInstance: Backup | null = null
 
 ipcMain.handle("backup:run", async (_: Electron.IpcMainInvokeEvent, cfg: Config) => {
 	const logger = (msg: string) => {
@@ -92,7 +105,13 @@ ipcMain.handle("backup:run", async (_: Electron.IpcMainInvokeEvent, cfg: Config)
 	const progressFn = (total: number, progress: number) => {
 		mainWindow!.webContents.send("download-progress", total, progress)
 	}
-	const bk = new Backup(cfg, logger, progressFn)
+	BackupInstance = new Backup(cfg, logger, progressFn)
 	mainWindow?.webContents.send("log", "Starting backup")
-	return bk.Run()
+	return BackupInstance.Run()
+})
+
+ipcMain.handle("backup:stop", async () => {
+	if (BackupInstance) {
+		BackupInstance.stop()
+	}
 })

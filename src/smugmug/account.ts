@@ -31,6 +31,7 @@ export type AccountInfo = {
 export class Account {
 	private _cfg: Config
 	static baseUrl = "https://api.smugmug.com"
+	private mustStop: boolean = false
 
 	constructor(cfg: Config) {
 		this._cfg = cfg
@@ -78,6 +79,10 @@ export class Account {
 		// await Promise.all(promises)
 		let total = rawAlbums.length
 		for (const album of rawAlbums) {
+			if (this.mustStop) {
+				console.log("Account info stopped")
+				return { IsValid: true, Albums: albums }
+			}
 			this.fetchImagesInfo(album)
 				.then(albumInfo => albums.push(albumInfo))
 				.finally(() => {
@@ -93,6 +98,10 @@ export class Account {
 		}
 
 		return { IsValid: true, Albums: albums }
+	}
+
+	stop() {
+		this.mustStop = true
 	}
 
 	async fetchImagesInfo(album: AlbumType): Promise<AlbumsInfo> {
@@ -140,6 +149,11 @@ export class Account {
 		let albums: AlbumType[] = []
 
 		while (uri) {
+			if (this.mustStop) {
+				console.log("getAlbums stopped")
+				break
+			}
+
 			const res = await makeApiCall<AlbumsResponse>(Account.baseUrl + uri, this._cfg.auth)
 			if (res.Code !== 200) {
 				console.log("getAlbums wrong response:", res)
@@ -166,6 +180,11 @@ export class Account {
 		let images: AlbumImageType[] = []
 
 		while (uri) {
+			if (this.mustStop) {
+				console.log("getAlbumImages stopped")
+				break
+			}
+
 			const res = await makeApiCall<AlbumsImagesResponse>(Account.baseUrl + uri, this._cfg.auth)
 			if (res.Code !== 200) {
 				console.log("getAlbumImages wrong response:", res)

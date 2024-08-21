@@ -24,6 +24,7 @@ export class Backup {
 	private progressFn: ProgressFn
 	private totalImages: number = 0
 	private downloadedImages: number = 0
+	private mustStop: boolean = false
 
 	constructor(cfg: Config, logFn: LogFn, progressFn: ProgressFn) {
 		this._cfg = cfg
@@ -48,6 +49,11 @@ export class Backup {
 		this.progressFn(this.totalImages, this.downloadedImages)
 
 		for (const album of info.Albums!) {
+			if (this.mustStop) {
+				console.log("Backup stopped")
+				return { IsValid: true, Content: "Backup stopped" }
+			}
+
 			// check if the folder exists or create it
 			if (!fs.existsSync(album.Folder)) {
 				fs.mkdirSync(album.Folder, { recursive: true })
@@ -69,6 +75,10 @@ export class Backup {
 			// await Promise.all(promises)
 			let total = album.Images.length
 			for (const image of album.Images) {
+				if (this.mustStop) {
+					console.log("Backup stopped")
+					return { IsValid: true, Content: "Backup stopped" }
+				}
 				this.download(image, album.Folder).finally(() => {
 					total--
 					if (process.env.NODE_ENV === "debug") {
@@ -82,6 +92,10 @@ export class Backup {
 		}
 
 		return { IsValid: true, Content: "Backup content" }
+	}
+
+	stop() {
+		this.mustStop = true
 	}
 
 	private async download(image: AlbumImageType, folder: string) {
