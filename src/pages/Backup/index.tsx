@@ -27,7 +27,15 @@ export default function BackupPage() {
 	}, [])
 
 	function handleBackup() {
+		if (isDownloading) {
+			toast.error(t("Backup already running"))
+			return
+		}
+
 		setIsDownloading(true)
+		setMessages([])
+		setBackupResult(null)
+
 		window.api
 			.makeBackup(config)
 			.then((res: BackupResponse) => {
