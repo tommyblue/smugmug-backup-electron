@@ -1,4 +1,5 @@
 import { MakerDeb } from "@electron-forge/maker-deb"
+import { MakerDMG } from "@electron-forge/maker-dmg"
 import { MakerRpm } from "@electron-forge/maker-rpm"
 import { MakerSquirrel } from "@electron-forge/maker-squirrel"
 import { MakerZIP } from "@electron-forge/maker-zip"
@@ -6,13 +7,33 @@ import { FusesPlugin } from "@electron-forge/plugin-fuses"
 import { VitePlugin } from "@electron-forge/plugin-vite"
 import type { ForgeConfig } from "@electron-forge/shared-types"
 import { FuseV1Options, FuseVersion } from "@electron/fuses"
+import path from "path"
 
 const config: ForgeConfig = {
 	packagerConfig: {
 		asar: true,
+		icon: path.join(process.cwd(), "icons", "icon.icns"),
+		extraResource: [path.join(process.cwd(), "icons", "icon.icns")],
 	},
 	rebuildConfig: {},
-	makers: [new MakerSquirrel({}), new MakerZIP({}, ["darwin"]), new MakerRpm({}), new MakerDeb({})],
+	makers: [
+		new MakerSquirrel({}),
+		new MakerZIP({}, ["darwin", "linux"]),
+		new MakerRpm({
+			options: {
+				icon: path.join(process.cwd(), "icons", "icon.png"),
+			},
+		}),
+		new MakerDeb({
+			options: {
+				icon: path.join(process.cwd(), "icons", "icon.png"),
+			},
+		}),
+		new MakerDMG({
+			icon: path.join(process.cwd(), "icons", "icon.icns"),
+			format: "ULFO",
+		}),
+	],
 	plugins: [
 		new VitePlugin({
 			// `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.

@@ -15,6 +15,7 @@ if (require("electron-squirrel-startup")) {
 const createWindow = () => {
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
+		icon: "../icons/icon.png",
 		width: 1600,
 		height: 1000,
 		webPreferences: {
@@ -30,7 +31,9 @@ const createWindow = () => {
 	}
 
 	// Open the DevTools.
-	mainWindow.webContents.openDevTools()
+	if (process.env?.NODE_ENV === "development") {
+		mainWindow.webContents.openDevTools()
+	}
 }
 
 // This method will be called when Electron has finished
